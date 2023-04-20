@@ -1214,15 +1214,12 @@ Cache::handleSnoop(PacketPtr pkt, CacheBlk *blk, bool is_timing,
 
         if (is_timing) {
             doTimingSupplyResponse(pkt, blk->data, is_deferred, pending_inval);
-            // jagdish
-            printf("Show data, if is_timing is 1:%s",blk->data);
         } else {
             pkt->makeAtomicResponse();
             // packets such as upgrades do not actually have any data
             // payload
             if (pkt->hasData()) {
                 pkt->setDataFromBlock(blk->data, blkSize);
-                printf("Show data, if is_timing is 0:%s",blk->data);
             }
         }
 

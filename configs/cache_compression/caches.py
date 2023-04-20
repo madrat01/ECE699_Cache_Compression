@@ -33,7 +33,20 @@ line options from each individual class.
 """
 
 import m5
+from m5.params import *
+from m5.proxy import *
+from m5.SimObject import SimObject
 from m5.objects import Cache
+from m5.objects.ClockedObject import *
+from m5.objects.Compressors import *
+from m5.objects.Prefetcher import *
+from m5.objects.ReplacementPolicies import *
+from m5.objects.Tags import *
+
+# Add the common scripts to our path
+m5.util.addToPath("../")
+
+from common import SimpleOpts
 
 class L1Cache(Cache):
     """Simple L1 Cache with default values"""
@@ -130,14 +143,23 @@ class LLCCache(Cache):
     response_latency = 20
     mshrs = 20
     tgts_per_mshr = 12
+    compressor = Param.BaseCacheCompressor(NULL, "Cache compressor.")
+    tags = Param.BaseTags(BaseSetAssoc(), "Tag store")
+            
+    #compressor = Param.BaseCacheCompressor(BDI(), "Cache compressor.")
+    #tags = Param.BaseTags(CompressedTags(), "Tag store")
 
-    def __init__(self, options=None):
+    SimpleOpts.add_option(
+        "--llc_size", help="LLC cache size. Default: %s" % size
+    )
+    SimpleOpts.add_option(
+        "--llc_assoc", help="LLC cache size. Default: %s" % assoc
+    )
+
+    def __init__(self, opts=None):
         super(LLCCache, self).__init__()
-        if options and options.llc_size:
-            self.size = options.llc_size
-        if options and options.llc_assoc:
-            self.assoc = options.llc_assoc
-        return
+        self.size = opts.llc_size
+        self.assoc = opts.llc_assoc
 
     def connectCPUSideBus(self, bus):
         self.cpu_side = bus.mem_side_ports

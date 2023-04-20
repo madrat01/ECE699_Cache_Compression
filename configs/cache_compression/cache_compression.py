@@ -65,14 +65,14 @@ default_binary = os.path.join(
     "tests/test-progs/hello/bin/x86/linux/hello",
 )
 
-parser = argparse.ArgumentParser(description='LLC Cache')
 # Binary to execute
-parser.add_argument("--binary", nargs="?", default=default_binary)
-parser.add_argument("--llc_size", nargs="?", default="256kB")
-parser.add_argument("--llc_assoc", nargs="?", default="2")
+SimpleOpts.add_option("binary", nargs="?", default=default_binary)
+SimpleOpts.add_option("llc_size", nargs="?", default="256kB")
+SimpleOpts.add_option("llc_assoc", nargs="?", default="8")
 
 # Finalize the arguments and grab the args so we can pass it on to our objects
-args = parser.parse_args()
+#args = parser.parse_args()
+args = SimpleOpts.parse_args()
 
 # create the system we are going to simulate
 system = System()

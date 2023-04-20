@@ -19,9 +19,9 @@ int main() {
     }
 
     // Print out the array values and their addresses
-    for (int i = 0; i < ARRAY_SIZE; i++) {
-        printf("arr[%d] = %d (address: %p)\n", i, arr[i], &arr[i]);
-    }
+    //for (int i = 0; i < ARRAY_SIZE; i++) {
+    //    printf("arr[%d] = %d (address: %p)\n", i, arr[i], &arr[i]);
+    //}
 
     return 0;
 }
