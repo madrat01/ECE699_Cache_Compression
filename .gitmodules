@@ -1,0 +1,3 @@
+[submodule "tests/microbench"]
+	path = tests/microbench
+	url = https://github.com/darchr/microbench.git

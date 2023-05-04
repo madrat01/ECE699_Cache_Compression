@@ -69,56 +69,62 @@ default_binary = os.path.join(
 SimpleOpts.add_option("binary", nargs="?", default=default_binary)
 SimpleOpts.add_option("llc_size", nargs="?", default="256kB")
 SimpleOpts.add_option("llc_assoc", nargs="?", default="8")
+SimpleOpts.add_option("num_cores", nargs="?", default="4")
 
 # Finalize the arguments and grab the args so we can pass it on to our objects
 #args = parser.parse_args()
 args = SimpleOpts.parse_args()
 
-# create the system we are going to simulate
-system = System()
+nc = int(args.num_cores)
+# Set up the system
+system = System(
+    cpu=[X86TimingSimpleCPU(cpu_id=i) for i in range(nc)],
+    mem_mode="timing",
+    mem_ranges=[AddrRange("512MB")]
+)
 
 # Set the clock frequency of the system (and all of its children)
 system.clk_domain = SrcClockDomain()
 system.clk_domain.clock = "1GHz"
 system.clk_domain.voltage_domain = VoltageDomain()
 
-# Set up the system
-system.mem_mode = "timing"  # Use timing accesses
-system.mem_ranges = [AddrRange("512MB")]  # Create an address range
-
-# Create a simple CPU
-system.cpu = X86TimingSimpleCPU()
-
-# Create an L1 instruction and data cache
-system.cpu.icache = L1ICache()
-system.cpu.dcache = L1DCache()
-
-# Connect the instruction and data caches to the CPU
-system.cpu.icache.connectCPU(system.cpu)
-system.cpu.dcache.connectCPU(system.cpu)
-
 # Create a memory bus, a coherent crossbar, in this case
 system.llcbus = L2XBar()
-
-# Hook the CPU ports up to the l2bus
-system.cpu.icache.connectBus(system.llcbus)
-system.cpu.dcache.connectBus(system.llcbus)
-
 # Create an L2 cache and connect it to the l2bus
 system.llccache = LLCCache(args)
 system.llccache.connectCPUSideBus(system.llcbus)
 
 # Create a memory bus
 system.membus = SystemXBar()
-
 # Connect the L2 cache to the membus
 system.llccache.connectMemSideBus(system.membus)
 
-# create the interrupt controller for the CPU
-system.cpu.createInterruptController()
-system.cpu.interrupts[0].pio = system.membus.mem_side_ports
-system.cpu.interrupts[0].int_requestor = system.membus.cpu_side_ports
-system.cpu.interrupts[0].int_responder = system.membus.mem_side_ports
+# All cpus belong to a common cpu_clk_domain, therefore running at a common
+# frequency.
+for cpu in system.cpu:
+    cpu.clk_domain = system.clk_domain
+
+# Create a simple CPU
+for i in range(nc) :
+    # Create an L1 instruction and data cache
+    system.cpu[i].icache = L1ICache()
+    system.cpu[i].dcache = L1DCache()
+
+    # Connect the instruction and data caches to the CPU
+    system.cpu[i].icache.connectCPU(system.cpu[i])
+    system.cpu[i].dcache.connectCPU(system.cpu[i])
+
+    # Hook the CPU ports up to the l2bus
+    system.cpu[i].icache.connectBus(system.llcbus)
+    system.cpu[i].dcache.connectBus(system.llcbus)
+
+    # create the interrupt controller for the CPU
+    system.cpu[i].createInterruptController()
+    system.cpu[i].interrupts[0].pio = system.membus.mem_side_ports
+    system.cpu[i].interrupts[0].int_requestor = system.membus.cpu_side_ports
+    system.cpu[i].interrupts[0].int_responder = system.membus.mem_side_ports
+    
+    system.cpu[i].createThreads()
 
 # Connect the system up to the membus
 system.system_port = system.membus.cpu_side_ports
@@ -131,14 +137,14 @@ system.mem_ctrl.port = system.membus.mem_side_ports
 
 system.workload = SEWorkload.init_compatible(args.binary)
 
-# Create a process for a simple "Hello World" application
-process = Process()
-# Set the command
-# cmd is a list which begins with the executable (like argv)
-process.cmd = [args.binary]
-# Set the cpu to use the process as its workload and create thread contexts
-system.cpu.workload = process
-system.cpu.createThreads()
+for i in range(nc) :
+    # Create a process for a simple "Hello World" application
+    process = Process(pid=100 + i)
+    # Set the command
+    # cmd is a list which begins with the executable (like argv)
+    process.cmd = [args.binary]
+    # Set the cpu to use the process as its workload and create thread contexts
+    system.cpu[i].workload = process
 
 # set up the root SimObject and start the simulation
 root = Root(full_system=False, system=system)

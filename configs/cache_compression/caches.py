@@ -143,11 +143,11 @@ class LLCCache(Cache):
     response_latency = 20
     mshrs = 20
     tgts_per_mshr = 12
-    compressor = Param.BaseCacheCompressor(NULL, "Cache compressor.")
-    tags = Param.BaseTags(BaseSetAssoc(), "Tag store")
+    #compressor = Param.BaseCacheCompressor(NULL, "Cache compressor.")
+    #tags = Param.BaseTags(BaseSetAssoc(), "Tag store")
             
-    #compressor = Param.BaseCacheCompressor(BDI(), "Cache compressor.")
-    #tags = Param.BaseTags(CompressedTags(), "Tag store")
+    compressor = Param.BaseCacheCompressor(BDI(), "Cache compressor.")
+    tags = Param.BaseTags(CompressedTags(), "Tag store")
 
     SimpleOpts.add_option(
         "--llc_size", help="LLC cache size. Default: %s" % size
